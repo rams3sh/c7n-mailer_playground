@@ -89,9 +89,9 @@ If there is any change to the above assumption in your setup, then change and us
 
 ### 4.2 Testing the mailer template
 
-Once the policy's sample result data is collected in data folder. Now we can start creating / testing the template. 
+Once the policy's sample result data is collected in data folder,  you can start creating / testing the template. 
 
-You can access the playground at :-
+One can access the playground at :-
 
 &nbsp; &nbsp; http://127.0.0.1:5000/template
 
@@ -117,7 +117,7 @@ You can pass the template name as value to `name` parameter to the same url.
 
 ![img.png](assets/sample_email.png)
 
-Note: 
+**Note:**
   
 There are some subtle changes in the above mail's template from provided template. 
 Hence, a slight difference. However, majority of the template content is same.
