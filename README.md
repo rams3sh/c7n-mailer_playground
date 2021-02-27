@@ -75,11 +75,21 @@ would require it.
 The above snippet basically results in your policy hitting this API service endpoint with the json
 that c7n-mailer would end up receiving in it's SQS queue otherwise.
 
-The result is saved as custodian_result.json in data folder within the same project.
-This json can be further used to prepare and test against our template.
 
+Run the c7n_mailer playground in the background and then execute the custodian policy. 
+Once the webhook is hit , the posted  result is saved as custodian_result.json in data folder within the same project.
+
+Now you have the base json to work on and create / test jinja template based on it.
+
+**Note:** 
+
+Assumption of the above snippet is that the policy and the playground is being run in your local system.
+
+If there is any change to the above assumption in your setup, then change and use the webhook url in the above snippet accordingly. 
 
 ### 4.2 Testing the mailer template
+
+Once the policy's sample result data is collected in data folder. Now we can start creating / testing the template. 
 
 You can access the playground at :-
 
