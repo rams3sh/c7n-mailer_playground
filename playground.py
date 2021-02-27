@@ -26,7 +26,7 @@ def template_test():
     # Load the template content
     template_name = request.args.get("name")
     if not template_name:
-        template_name = "security-non-compliance-mail.html.j2"
+        template_name = "test_template.html.j2"
 
     env = get_jinja_env("templates")
     tm = env.get_template(template_name)

@@ -1,4 +1,4 @@
-# c7n-mailer template playground
+# c7n-mailer Playground
 
 This is a very simple flask based app that helps in creating and testing Jinja templates for c7n-mailer.
 
@@ -44,7 +44,7 @@ it's template engine along with same jinja filters that c7n-mailer provides for 
     ```
 ## 3. Running the app
 ```bash
-python3 c7n_mailer_template_tester.py
+python3 playground.py
 ```
 
 There are two endpoints for the app.
@@ -55,7 +55,7 @@ There are two endpoints for the app.
 
 * `/template?name=<template_name>` - This endpoint is used to check how the rendered output will look like.
 It supports `GET` method. One can use custom template name being passed as part of name parameter. 
-  By default, it uses security-non-compliance-mail.html.j2 as template if no name is passed.
+  By default, it uses test_template.html.j2 as template if no name is passed.
   
 ## 4. Usage
 
@@ -70,11 +70,11 @@ Add the below snippet as part of the policy for which the template is being prep
         batch: true
         body: "@"
 ```
-The above snippet basically results in your policy to hit this API service endpoint with the json
-that c7n-mailer would end up receiving in it's SQS queue.
+The above snippet basically results in your policy hitting this API service endpoint with the json
+that c7n-mailer would end up receiving in it's SQS queue otherwise.
 
 The result is saved as custodian_result.json in data folder within the same project.
-This json can be used to prepare and test against our template.
+This json can be further used to prepare and test against our template.
 
 
 ### 4.2 Testing the mailer template
@@ -82,6 +82,8 @@ This json can be used to prepare and test against our template.
 You can access the playground at :-
 
 &nbsp; &nbsp; http://127.0.0.1:5000/template
+
+By default, it renders, `test_template.html.j2`.
 
 **Note :**
   
@@ -91,11 +93,11 @@ You can pass the template name as value to `name` parameter to the same url.
 
 ## 5. Sample Screenshot
 
-#### Playground 
+#### Sample template prepared and rendered via playground 
 
-![img.png](assets/sample_screenshot.png)
+![img.png](assets/sample_playground_template.png)
 
 
-#### Actual Mail
+#### Sample mail from c7n-mailer 
 
 ![img.png](assets/sample_email.png)
