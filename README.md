@@ -1,8 +1,6 @@
 # c7n-mailer Playground
 
-This is a very simple flask based app that helps in creating and testing Jinja templates for c7n-mailer.
-
-This repository also consists of sample mail template created using this playground.
+This is a very simple flask based app that helps in creating and testing Jinja templates for [c7n-mailer](https://cloudcustodian.io/docs/tools/c7n-mailer.html).
 
 This was created for helping me write custom mailer templates for my organization's c7n setup.
 
@@ -101,3 +99,10 @@ You can pass the template name as value to `name` parameter to the same url.
 #### Sample mail from c7n-mailer 
 
 ![img.png](assets/sample_email.png)
+
+## 6. Disclaimer(s)
+
+* The flask app by default runs in DEBUG mode for testing purposes.
+
+
+* Currently the playground only caters to c7n-mailer's email template testing.
