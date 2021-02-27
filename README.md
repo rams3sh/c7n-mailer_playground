@@ -19,7 +19,12 @@ it's template engine along with same jinja filters that c7n-mailer provides for 
 
 ## 2. Installation
 
-* Install Python3  and PIP package
+* Clone this repository 
+  ```
+  git clone https://github.com/rams3sh/c7n-mailer_playground
+  cd c7n-mailer_playground/
+  ```
+
 * Install the Virtual Environment Package for Python
   ```
   pip3 install virtualenv
@@ -36,10 +41,7 @@ it's template engine along with same jinja filters that c7n-mailer provides for 
     ```
     pip install -r requirements.txt
     ```
-* Deactivate the environment once done with usage
-    ```
-    deactivate
-    ```
+
 ## 3. Running the app
 ```bash
 python3 playground.py
@@ -58,16 +60,18 @@ It supports `GET` method. One can use custom template name being passed as part 
 ## 4. Usage
 
 ### 4.1 Getting the raw custodian result json 
-Add the below snippet as part of the policy for which the template is being prepared. 
+Add the below snippet as part of the actions in your policy for which the template is being prepared. 
 
 ```
-   actions:
       - type: webhook
         url: http://127.0.0.1:5000/webhook
         method: POST
-        batch: true
-        body: "@"
+        body: "@" 
 ```
+
+Ensure that the actions section also has your `notify` action, since certain sections of the rendered template 
+would require it.
+
 The above snippet basically results in your policy hitting this API service endpoint with the json
 that c7n-mailer would end up receiving in it's SQS queue otherwise.
 
@@ -83,6 +87,9 @@ You can access the playground at :-
 
 By default, it renders, `test_template.html.j2`.
 
+You can keep making changes to the template in the side and refresh the site to see the changes getting reflected.
+
+
 **Note :**
   
 If you are using a custom template, you have to place your template in the templates folder. 
@@ -96,9 +103,14 @@ You can pass the template name as value to `name` parameter to the same url.
 ![img.png](assets/sample_playground_template.png)
 
 
-#### Sample mail from c7n-mailer 
+#### Sample mail alert received through c7n-mailer 
 
 ![img.png](assets/sample_email.png)
+
+Note: 
+  
+There are some subtle changes in the above mail's template from provided template. 
+Hence, a slight difference. However, majority of the template content is same.
 
 ## 6. Disclaimer(s)
 
