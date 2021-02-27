@@ -1,0 +1,324 @@
+<html lang="en">
+
+{% macro increment(dct, key, inc=1)%}
+    {% if dct.update({key: dct[key] + inc}) %} {% endif %}
+{% endmacro %}
+
+{% macro columnHeading(columnNames, tableWidth) -%}
+	<table>
+        <th>{{ 'S.No' }}</th>
+	{% for columnName in columnNames %}
+		<th>{{ columnName }}</th>
+	{% endfor %}
+{%- endmacro %}
+
+{% macro columnData(resources, columnNames) -%}
+    {% for resource in resources %}
+    <tr>
+        <td align="center">{{ loop.index }}</td>
+        {% for columnName in columnNames %}
+            {% if columnName == 'RoleLastUsedDate' %}
+                {% if resource['RoleLastUsed'].get('LastUsedDate') %}
+                    {% set last_used_status = resource['RoleLastUsed'].get('LastUsedDate')  + ' (' ~ (resource['RoleLastUsed'].get('LastUsedDate')  | get_date_age)  + ' days since last usage)' %}
+                {% else %}
+                    {% set last_used_status = "Never used till date" + ' (' ~ ( resource['CreateDate'] | get_date_age)  + ' days since creation)' %}
+                {% endif %}
+                <td>{{ last_used_status }}</td>
+            {% elif columnName == 'Tags' %}
+            <td>
+                {% if resource.get('Tags') %}
+                    {% for tag in resource['Tags'] %}
+                        <p style="font-weight: bold">{{ tag.get('Key') + ':'}}</p>
+                        {{tag.get('Value')}}
+                        {% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                {% else %}
+                    {{ 'No Tags Available' }}
+                {% endif %}
+             </td>
+            {% else %}
+                <td>{{ resource[columnName] }}</td>
+            {% endif %}
+        {% endfor %}
+    </tr>
+    {% endfor %}
+</table>
+{%- endmacro %}
+
+
+{# Main #}
+{% macro createTable(columnNames, resources, tableWidth) %}
+	{{ columnHeading(columnNames, tableWidth) }}
+	{{ columnData(resources, columnNames) }}
+{%- endmacro %}
+
+{# Counter Variable from https://stackoverflow.com/a/45643011 #}
+{% set counter = {
+    'counter': 0,
+    } %}
+
+<br>
+    <head>
+        <style>html, body {
+            height: 100%;
+            margin:0;
+            padding:0;
+            width: 90%;
+            }
+            .center {
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+
+            }
+            table, td {
+              border: 1px solid black;
+              border-collapse: collapse;
+              empty-cells: show;
+            }
+            th{
+                  border: 1px solid black;
+                  background-color:#d4e3e5;
+                  padding: 8px;
+                  empty-cells: show;
+            }
+
+        </style>
+         <title>Cloud Custodian Notification - {{  account  }}</title>
+    </head>
+    <h3 style="font-family:'Arial',sans-serif;color:#646464;font-weight: bold;text-align:center;">
+        <p style="font-size:30px;color:red"> ⚠ AWS Security Non-Compliance Alert </p>
+    </h3>
+    <div style="margin-left: 5em;">
+     <p style="font-family:'Arial',sans-serif;color:#000000;"> <a style="font-weight: bold"> What? : </a>{{  action['violation_desc']  }} </p>
+     <p style="font-family:'Arial',sans-serif;color:#000000;"> <a style="font-weight: bold"> Where? : </a>{{  "AWS Account Name: %s  (Region: %s)" | format( account,region)  }}</p>
+     <p style="font-family:'Arial',sans-serif;color:#000000;">
+         <a style="font-weight: bold"> Security Expectation :- </a>
+         <br>
+         {{  action['action_desc']  | replace('\n', '<br>') | replace('\r', '<br>') }}
+     </p>
+     <p style="font-family:'Arial',sans-serif;color:#000000"> <a style="font-weight: bold"> Non-Compliant Resources :- </a>
+                {% if policy['name'] == "iam_user_with_admin_privilege" %}
+                    <table style="width:100%; border:1px dashed black; border-collapse:collapse;margin-left:auto;margin-right:auto;">
+                        {% set columnNames = ['UserName','CreatedTime','Arn','Allowed Privileged Permissions'] %}
+                        <tr>
+                            <th> {{ 'S.No' }} </th>
+                            {% for column in columnNames %}
+                                <th>{{ column }}</th>
+                            {% endfor %}
+                        </tr>
+                        {% for resource in resources %}
+                            <tr>
+                                <td align="center">{{ loop.index }}</td>
+                                <td> {{ resource['UserName'] }} </td>
+                                <td> {{ resource['CreateDate'] }} </td>
+                                <td> {{ resource['Arn'] }} </td>
+                                <td style="color:red;">
+                                    {% for permission in resource['c7n:perm-matches'] %}
+                                         {{ permission['EvalActionName'] }}
+                                         {% if not loop.last %}, {% endif %}
+                                     {% endfor %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </table>
+                {% elif policy['name'] == "iam_role_with_admin_privilege" %}
+                    <table style="width:100%; border:1px solid black; border-collapse:collapse;margin-left:auto;margin-right:auto;">
+                        {% set columnNames = ['RoleName','CreatedTime','Arn','Description','RoleLastUsedDate','Allowed Privileged Permissions'] %}
+                        <tr>
+                            <th> {{ 'S.No' }} </th>
+                            {% for column in columnNames %}
+                                <th>{{ column }}</th>
+                            {% endfor %}
+                        </tr>
+                        {% for resource in resources %}
+                            <tr>
+                                <td align="center">{{ loop.index }}</td>
+                                <td> {{ resource['RoleName'] }} </td>
+                                <td> {{ resource['CreateDate'] }} </td>
+                                <td> {{ resource['Arn'] }} </td>
+                                <td> {{ resource['Description'] }} </td>
+                                {% set last_used_status = (resource['RoleLastUsed'].get('LastUsedDate') or "Never used till date") + ' ( ' ~ ((resource['RoleLastUsed'].get('LastUsedDate') or resource['CreateDate']) | get_date_age)  + ' days since last usage / created in case of never used)' %}
+                                <td>{{ last_used_status }}</td>
+                                <td style="color:red;">
+                                    {% for permission in resource['c7n:perm-matches'] %}
+                                         {{ permission['EvalActionName'] }}
+                                         {% if not loop.last %}, {% endif %}
+                                     {% endfor %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </table>
+                {% elif policy['name'] == "ec2_securitygroups_with_unauthorised_ingress" %}
+                    <table style="width:100%; border:1px solid black; border-collapse:collapse;margin-left:auto;margin-right:auto;">
+                        {% set columnNames = ['SecurityGroupId','SecurityGroupName','SecurityGroupDescription','SecurityGroupTags','Non-Compliant Ingress Permission Description','Non-Compliant Ingress - Allowed Protocol', 'Non-Compliant Ingress - Allowed IP(s) / Network(s)','Non-Compliant Ingress - Allowed FromPort','Non-Compliant Ingress - Allowed ToPort'] %}
+                        <tr>
+                            <th> {{ 'S.No' }} </th>
+                            {% for column in columnNames %}
+                                <th>{{ column }}</th>
+                            {% endfor %}
+                        </tr>
+                        {% for resource in resources %}
+                            {% for perm in resource['MatchedIpPermissions']%}
+                            <tr>
+                                {{ increment(counter, 'counter') }}
+                                <td align="center">{{ counter['counter'] }}</td>
+                                <td> {{ resource['GroupId'] }} </td>
+                                <td> {{ resource['GroupName'] }} </td>
+                                <td> {{ resource['Description'] }} </td>
+                                {% if resource.get('Tags') %}
+                                    {% for tag in resource['Tags'] %}
+                                    <a style="font-weight: bold">{{ tag.get('Key') + ':'}}</a>
+                                        {{tag.get('Value')}}
+                                        {% if not loop.last %}, {% endif %}
+                                    {% endfor %}
+                                {% else %}
+                                    {{ 'No Tags Available' }}
+                                {% endif %}
+                                </td>
+                                {% if perm.get('IpRanges') %}
+                                    <td>{{ perm['IpRanges'][0].get('Description') }}</td>
+                                    {% if perm['IpProtocol'] == '-1' %}
+                                        <td align="center" style="color:red;">{{ 'All Protocols (-1)' }}</td>
+                                    {% else %}
+                                        <td align="center" style="color:red;">{{ perm['IpProtocol'] }}</td>
+                                    {% endif %}
+                                    <td align="center" style="color:red;">
+                                        {% for ip in perm['IpRanges']%}
+                                            {{ ip['CidrIp'] }}
+                                            {% if not loop.last %}, {% endif %}
+                                        {% endfor %}
+                                    </td>
+                                {% elif perm.get('Ipv6Ranges') %}
+                                    <td>{{ perm['Ipv6Ranges'][0].get('Description') }}</td>
+                                    {% if perm['IpProtocol'] == '-1' %}
+                                        <td align="center" style="color:red;">{{ 'All Protocols (-1)' }}</td>
+                                    {% else %}
+                                        <td align="center" style="color:red;">{{ perm['IpProtocol'] }}</td>
+                                    {% endif %}
+                                    <td align="center" style="color:red;">
+                                        {% for ip in perm['Ipv6Ranges']%}
+                                            {{ ip['CidrIpv6'] }}
+                                            {% if not loop.last %}, {% endif %}
+                                        {% endfor %}
+                                    </td>
+                                {% endif %}
+                                {% if perm['IpProtocol'] == '-1' %}
+                                    <td align="center" style="color:red;">{{ 'All Port Range' }}</td>
+                                    <td align="center" style="color:red;">{{ 'All Port Range' }}</td>
+                                {% else %}
+                                    <td align="center" style="color:red;"> {{ perm['FromPort'] }} </td>
+                                    <td align="center" style="color:red;"> {{ perm['ToPort'] }} </td>
+                                {% endif %}
+                            </tr>
+                            {% endfor %}
+                        {% endfor %}
+                    </table>
+                {% elif policy['name'] == "iam_user_unused_with_permissions" %}
+                    <table style="width:100%; border:1px solid black; border-collapse:collapse;margin-left:auto;margin-right:auto;">
+                        {% set columnNames = ['UserName', 'Arn', 'CreateDate', 'Tags', 'Latest Activity', 'ConsoleLoginEnabled', 'ConsoleLastUsed', 'Access Key 1 Enabled', 'Access Key 1 Created Date','Access Key 1 Last Used','Access Key 2 Enabled', 'Access Key 2 Created Date','Access Key 2 Last Used'] %}
+                        <tr>
+                            <th> {{ 'S.No' }} </th>
+                            {% for column in columnNames %}
+                                <th>{{ column }}</th>
+                            {% endfor %}
+                        </tr>
+                        {% for resource in resources %}
+                            <tr>
+                                <td align="center">{{ loop.index }}</td>
+                                <td>{{ resource['UserName'] }}</td>
+                                <td>{{ resource['Arn'] }}</td>
+                                <td>{{ resource['CreateDate'] }}</td>
+                                <td>
+                                {% if resource.get('Tags') %}
+                                    {% for tag in resource['Tags'] %}
+                                    <a style="font-weight: bold">{{ tag.get('Key') + ':'}}</a>
+                                        {{tag.get('Value')}}
+                                        {% if not loop.last %}, {% endif %}
+                                    {% endfor %}
+                                {% else %}
+                                    {{ 'No Tags Available' }}
+                                {% endif %}
+                                </td>
+                                {% set last_used_date = [] %}
+                                {% if resource['c7n:credential-report']['password_last_used']%}
+                                    {% set last_used_date = [resource['c7n:credential-report']['password_last_used']] %}
+                                {% endif %}
+                                {% if resource['c7n:credential-report'].get('access_keys') and resource['c7n:credential-report']['access_keys'][0]['last_used_date'] %}
+                                    {% set last_used_date = last_used_date + [resource['c7n:credential-report']['access_keys'][0]['last_used_date']] %}
+                                    {% if resource['c7n:credential-report']['access_keys'] | length == 2 and resource['c7n:credential-report']['access_keys'][1]['last_used_date'] %}
+                                        {% set last_used_date = last_used_date + [resource['c7n:credential-report']['access_keys'][1]['last_used_date']] %}
+                                    {% endif %}
+                                {% endif %}
+                                {% if last_used_date %}
+                                    <td>{{ (last_used_date | sort | last) ~ '('~ (last_used_date | sort | last | get_date_age) ~ ' days ago)' }}</td>
+                                {% else %}
+                                    <td>{{ 'No activity witnessed till date (' ~ (resource['CreateDate'] | get_date_age) ~ ' days since creation )' }}</td>
+                                {% endif %}
+                                <td>{{ resource['c7n:credential-report']['password_enabled'] }}</td>
+                                <td>{{ resource['c7n:credential-report']['password_last_used'] }}</td>
+                                {% if resource['c7n:credential-report'].get('access_keys') %}
+                                    <td>{{ resource['c7n:credential-report']['access_keys'][0]['active'] }}</td>
+                                    <td>{{ resource['c7n:credential-report']['access_keys'][0]['last_rotated'] }}</td>
+                                    <td>{{ resource['c7n:credential-report']['access_keys'][0]['last_used_date'] }}</td>
+                                    {% if resource['c7n:credential-report']['access_keys'] | length == 2 %}
+                                        <td>{{ resource['c7n:credential-report']['access_keys'][1]['active'] }}</td>
+                                        <td>{{ resource['c7n:credential-report']['access_keys'][1]['last_rotated']}}</td>
+                                        <td>{{ resource['c7n:credential-report']['access_keys'][1]['last_used_date']}}</td>
+                                    {% else %}
+                                        <td> {{ "No Access Key" }}</td>
+                                        <td> {{ "No Access Key" }}</td>
+                                        <td> {{ "No Access Key" }}</td>
+                                    {% endif %}
+                                {% else %}
+                                    <td> {{ "No Access Keys" }}</td>
+                                    <td> {{ "No Access Keys" }}</td>
+                                    <td> {{ "No Access Keys" }}</td>
+                                    <td> {{ "No Access Keys" }}</td>
+                                    <td> {{ "No Access Keys" }}</td>
+                                    <td> {{ "No Access Keys" }}</td>
+                                {% endif %}
+                            </tr>
+                        {% endfor %}
+                    </table>
+                {# IAM Related Resources Default Columns #}
+                {% elif policy['resource'] == "iam-role" %}
+			        {% set columnNames = ['RoleName','RoleId','Arn','CreateDate','RoleLastUsedDate','Tags', 'Description'] %}
+			        {{ createTable(columnNames, resources, '60') }}
+                {% elif policy['resource'] == "iam-user" %}
+			        {% set columnNames = ['UserName', 'UserId', 'Arn','CreateDate', 'Tags'] %}
+			        {{ createTable(columnNames, resources, '60') }}
+                {% elif policy['resource'] == "iam-group" %}
+			        {% set columnNames = ['GroupName', 'GroupId', 'Arn','CreateDate'] %}
+			        {{ createTable(columnNames, resources, '60') }}
+                {# IAM Related Resources Default Columns #}
+
+                {# EC2 Related Resources Default Columns #}
+                {% elif policy['resource'] == "security-group" %}
+                    {% set columnNames = ['GroupId', 'GroupName', 'GroupDescription','Tags'] %}
+                    {{ createTable(columnNames, resources, '60') }}
+                {# EC2 Related Resources Default Columns #}
+                {% else %}
+                    <table style="width:100%; border:1px dashed black; border-collapse:collapse;margin-left:auto;margin-right:auto;">
+                            <tr>
+                                <th>{{ "S.No" }}</th>
+                                {% for column in resources[0] %}
+                                    <th>{{ column }}</th>
+                                {% endfor %}
+                            </tr>
+                        {% for resource in resources %}
+                            <tr>
+                                <td align="center"> {{ loop.index }}</td>
+                                {% for column in resource %}
+                                    <td>{{ resource[column] }}</td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                        </table>
+                {% endif %}
+
+     </p>
+    <br>
+    </div>
+</html>
+
